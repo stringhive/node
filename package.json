@@ -1,8 +1,14 @@
 {
   "name": "stringhive",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stringhive CLI and Node.js client for pushing and pulling translation strings",
-  "keywords": ["stringhive", "i18n", "l10n", "translations", "cli"],
+  "keywords": [
+    "stringhive",
+    "i18n",
+    "l10n",
+    "translations",
+    "cli"
+  ],
   "license": "MIT",
   "type": "module",
   "engines": {
