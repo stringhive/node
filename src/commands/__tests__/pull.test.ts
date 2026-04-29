@@ -71,4 +71,35 @@ describe('pullCommand', () => {
     await pullCommand('my-app', { locale: ['fr'], quiet: true });
     expect(process.stdout.write).not.toHaveBeenCalled();
   });
+
+  it('skips files matching exclude pattern during pull', async () => {
+    await pullCommand('my-app', { sourceLocale: 'en', exclude: ['fr.json'], quiet: true });
+    expect(mockWrite).not.toHaveBeenCalledWith(expect.stringContaining('fr.json'), expect.anything());
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('de.json'), expect.anything());
+  });
+
+  it('skips files matching glob exclude pattern during pull', async () => {
+    await pullCommand('my-app', { sourceLocale: 'en', exclude: ['*.json'], quiet: true });
+    expect(mockWrite).not.toHaveBeenCalled();
+  });
+
+  it('merges config exclude with cli exclude for pull', async () => {
+    vi.mocked(loadStringhiveConfig).mockResolvedValue({ exclude: ['fr.json'] });
+    await pullCommand('my-app', { sourceLocale: 'en', exclude: ['de.json'], quiet: true });
+    expect(mockWrite).not.toHaveBeenCalledWith(expect.stringContaining('fr.json'), expect.anything());
+    expect(mockWrite).not.toHaveBeenCalledWith(expect.stringContaining('de.json'), expect.anything());
+  });
+
+  it('skips files by basename when path contains locale prefix', async () => {
+    mockClient.export.mockResolvedValue({
+      files: {
+        'es/app.json': '{"hello":"Hola"}',
+        'es/auth.json': '{"login":"Iniciar"}',
+        'fr/app.json': '{"hello":"Bonjour"}',
+      },
+    });
+    await pullCommand('my-app', { exclude: ['auth.json'], quiet: true });
+    expect(mockWrite).not.toHaveBeenCalledWith(expect.stringContaining('auth.json'), expect.anything());
+    expect(mockWrite).toHaveBeenCalledTimes(2);
+  });
 });

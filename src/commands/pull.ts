@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { StringhiveClient } from '../api/client.js';
 import { getFormatHandler } from '../formats/index.js';
 import { loadStringhiveConfig } from '../config/loader.js';
+import { isExcluded } from '../utils/exclude.js';
 import type { FormatName } from '../formats/types.js';
 
 export interface PullOptions {
@@ -11,6 +12,7 @@ export interface PullOptions {
   includeSource?: boolean;
   sourceLocale?: string;
   langPath?: string;
+  exclude?: string[];
   quiet?: boolean;
 }
 
@@ -21,6 +23,8 @@ export async function pullCommand(hive: string | undefined, cliOptions: PullOpti
   if (!resolvedHive) {
     throw new Error('No hive specified. Pass it as an argument or set "hive" in stringhive.config.ts.');
   }
+
+  const exclude = [...(fileConfig.exclude ?? []), ...(cliOptions.exclude ?? [])];
 
   const configLocales = fileConfig.pull?.locale;
   const configLocaleList = configLocales
@@ -66,6 +70,12 @@ export async function pullCommand(hive: string | undefined, cliOptions: PullOpti
           (locale) => filename.startsWith(`${locale}.`) || filename.startsWith(`${locale}/`),
         ),
       ),
+    );
+  }
+
+  if (exclude.length > 0) {
+    files = Object.fromEntries(
+      Object.entries(files).filter(([filename]) => !isExcluded(filename, exclude)),
     );
   }
 

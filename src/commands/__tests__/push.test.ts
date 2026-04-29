@@ -87,4 +87,34 @@ describe('pushCommand', () => {
     });
     await expect(pushCommand('my-app', { quiet: true })).rejects.toThrow('No source strings found');
   });
+
+  it('skips push when source file matches exclude pattern', async () => {
+    await pushCommand('my-app', { sourceLocale: 'en', exclude: ['en.json'], quiet: true });
+    expect(mockClient.importStrings).not.toHaveBeenCalled();
+    expect(mockClient.syncStrings).not.toHaveBeenCalled();
+  });
+
+  it('skips push when source file matches glob exclude pattern', async () => {
+    await pushCommand('my-app', { sourceLocale: 'en', exclude: ['*.json'], quiet: true });
+    expect(mockClient.importStrings).not.toHaveBeenCalled();
+  });
+
+  it('merges config exclude with cli exclude for push', async () => {
+    vi.mocked(loadStringhiveConfig).mockResolvedValue({ exclude: ['en.json'] });
+    await pushCommand('my-app', { sourceLocale: 'en', exclude: ['fr.json'], quiet: true });
+    expect(mockClient.importStrings).not.toHaveBeenCalled();
+  });
+
+  it('skips excluded translation locales when --with-translations is set', async () => {
+    vi.mocked(formats.discoverLocales).mockResolvedValue(['en', 'fr', 'de']);
+    await pushCommand('my-app', {
+      withTranslations: true,
+      sourceLocale: 'en',
+      exclude: ['fr.json'],
+      quiet: true,
+    });
+    expect(mockClient.importTranslations).toHaveBeenCalledTimes(1);
+    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', 'de', expect.any(Object));
+    expect(mockClient.importTranslations).not.toHaveBeenCalledWith('my-app', 'fr', expect.any(Object));
+  });
 });
