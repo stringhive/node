@@ -47,14 +47,14 @@ describe('StringhiveClient', () => {
   });
 
   describe('locales()', () => {
-    it('calls /v1/locales and returns data array', async () => {
+    it('calls /locales and returns data array', async () => {
       const data = [{ code: 'en', name: 'English' }];
       global.fetch = mockFetch(200, { data });
       const client = new StringhiveClient();
       const result = await client.locales();
       expect(result).toEqual(data);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/v1/locales'),
+        expect.stringContaining('/locales'),
         expect.objectContaining({ method: 'GET' }),
       );
     });
@@ -71,14 +71,14 @@ describe('StringhiveClient', () => {
   });
 
   describe('hive()', () => {
-    it('calls /v1/hives/:slug', async () => {
+    it('calls /hives/:slug', async () => {
       const data = { slug: 'my-app', name: 'My App', locale: 'en', string_count: 10, translation_count: 5 };
       global.fetch = mockFetch(200, { data });
       const client = new StringhiveClient();
       const result = await client.hive('my-app');
       expect(result).toEqual(data);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/v1/hives/my-app'),
+        expect.stringContaining('/hives/my-app'),
         expect.anything(),
       );
     });
@@ -168,7 +168,7 @@ describe('StringhiveClient', () => {
       const payload = { strings: [{ key: 'hello', value: 'Hello' }] };
       await client.importStrings('my-app', payload);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/v1/hives/my-app/strings/import'),
+        expect.stringContaining('/hives/my-app/strings/import'),
         expect.objectContaining({ method: 'POST' }),
       );
     });
@@ -180,7 +180,7 @@ describe('StringhiveClient', () => {
       const client = new StringhiveClient();
       await client.syncStrings('my-app', { strings: [], conflict_strategy: 'clear' });
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/v1/hives/my-app/strings/sync'),
+        expect.stringContaining('/hives/my-app/strings/sync'),
         expect.objectContaining({ method: 'POST' }),
       );
     });
