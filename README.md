@@ -54,6 +54,10 @@ export default defineConfig({
     // 'en.json',       // skip a specific locale file
     // '*.json',        // skip all JSON locale files
   ],
+  include: [
+    // 'fr.json',       // only process this locale file
+    // '*.json',        // only process JSON locale files
+  ],
   push: {
     conflictStrategy: 'keep',
   },
@@ -90,6 +94,7 @@ Options:
   --lang-path <path>             Use a different directory (default: "./lang")
   --format <format>              File format: json (default: "json")
   --exclude <patterns...>        Glob pattern(s) of files to skip, merged with config exclude
+  --include <patterns...>        Glob pattern(s) of files to include exclusively, merged with config include
   --quiet                        Suppress progress output
 ```
 
@@ -111,6 +116,10 @@ stringhive push my-app --conflict-strategy clear
 # Skip specific files (patterns are matched against the filename)
 stringhive push my-app --exclude en.json
 stringhive push my-app --exclude '*.json'
+
+# Only push specific files (others are ignored)
+stringhive push my-app --include fr.json
+stringhive push my-app --include 'fr.json' --exclude 'en.json'
 ```
 
 The output tells you what happened:
@@ -139,6 +148,7 @@ Options:
   --source-locale <locale>  Source locale code (default: "en")
   --lang-path <path>        Use a different directory (default: "./lang")
   --exclude <patterns...>   Glob pattern(s) of files to skip, merged with config exclude
+  --include <patterns...>   Glob pattern(s) of files to include exclusively, merged with config include
   --quiet                   Suppress progress output
 ```
 
@@ -160,6 +170,11 @@ stringhive pull my-app --dry-run
 # Skip specific files (patterns are matched against the filename and its basename)
 stringhive pull my-app --exclude fr.json
 stringhive pull my-app --exclude '*.json'
+
+# Only pull specific files (others are ignored)
+stringhive pull my-app --include fr.json
+stringhive pull my-app --include 'fr.json' --include 'de.json'
+stringhive pull my-app --include '*.json' --exclude fr.json
 ```
 
 Output:

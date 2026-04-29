@@ -8,6 +8,7 @@ export interface StringhiveConfig {
   sourceLocale?: string;
   format?: FormatName;
   exclude?: string[];
+  include?: string[];
   push?: {
     conflictStrategy?: 'keep' | 'clear';
     withTranslations?: boolean;
