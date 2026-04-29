@@ -105,6 +105,50 @@ describe('pushCommand', () => {
     expect(mockClient.importStrings).not.toHaveBeenCalled();
   });
 
+  it('skips push when source file does not match include pattern', async () => {
+    await pushCommand('my-app', { sourceLocale: 'en', include: ['fr.json'], quiet: true });
+    expect(mockClient.importStrings).not.toHaveBeenCalled();
+    expect(mockClient.syncStrings).not.toHaveBeenCalled();
+  });
+
+  it('pushes when source file matches include pattern', async () => {
+    await pushCommand('my-app', { sourceLocale: 'en', include: ['en.json'], quiet: true });
+    expect(mockClient.importStrings).toHaveBeenCalled();
+  });
+
+  it('merges config include with cli include for push', async () => {
+    vi.mocked(loadStringhiveConfig).mockResolvedValue({ include: ['fr.json'] });
+    await pushCommand('my-app', { sourceLocale: 'en', include: ['en.json'], quiet: true });
+    expect(mockClient.importStrings).toHaveBeenCalled();
+  });
+
+  it('skips non-included translation locales when --with-translations is set', async () => {
+    vi.mocked(formats.discoverLocales).mockResolvedValue(['en', 'fr', 'de']);
+    await pushCommand('my-app', {
+      withTranslations: true,
+      sourceLocale: 'en',
+      include: ['en.json', 'fr.json'],
+      quiet: true,
+    });
+    expect(mockClient.importTranslations).toHaveBeenCalledTimes(1);
+    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', 'fr', expect.any(Object));
+    expect(mockClient.importTranslations).not.toHaveBeenCalledWith('my-app', 'de', expect.any(Object));
+  });
+
+  it('applies include and exclude simultaneously for push translations', async () => {
+    vi.mocked(formats.discoverLocales).mockResolvedValue(['en', 'fr', 'de']);
+    await pushCommand('my-app', {
+      withTranslations: true,
+      sourceLocale: 'en',
+      include: ['*.json'],
+      exclude: ['fr.json'],
+      quiet: true,
+    });
+    expect(mockClient.importTranslations).toHaveBeenCalledTimes(1);
+    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', 'de', expect.any(Object));
+    expect(mockClient.importTranslations).not.toHaveBeenCalledWith('my-app', 'fr', expect.any(Object));
+  });
+
   it('skips excluded translation locales when --with-translations is set', async () => {
     vi.mocked(formats.discoverLocales).mockResolvedValue(['en', 'fr', 'de']);
     await pushCommand('my-app', {

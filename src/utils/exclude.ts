@@ -11,3 +11,9 @@ export function isExcluded(filename: string, patterns: string[]): boolean {
   const base = basename(filename);
   return patterns.some((p) => matchGlob(p, filename) || matchGlob(p, base));
 }
+
+export function isIncluded(filename: string, patterns: string[]): boolean {
+  if (patterns.length === 0) return true;
+  const base = basename(filename);
+  return patterns.some((p) => matchGlob(p, filename) || matchGlob(p, base));
+}
