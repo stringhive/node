@@ -84,7 +84,8 @@ export async function pullCommand(hive: string | undefined, cliOptions: PullOpti
   log(`Pulling from hive '${resolvedHive}'...`);
 
   let totalKeys = 0;
-  for (const [filename, content] of fileEntries) {
+  for (const [filename, raw] of fileEntries) {
+    const content = JSON.parse(raw) as Record<string, string>;
     const outPath = join(options.langPath, filename);
     await handler.write(outPath, content);
     const count = Object.keys(content).length;

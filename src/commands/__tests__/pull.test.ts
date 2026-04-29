@@ -13,9 +13,9 @@ const mockWrite = vi.fn().mockResolvedValue(undefined);
 const mockClient = {
   export: vi.fn().mockResolvedValue({
     files: {
-      'fr.json': { hello: 'Bonjour' },
-      'de.json': { hello: 'Hallo' },
-      'en.json': { hello: 'Hello' },
+      'fr.json': '{"hello":"Bonjour"}',
+      'de.json': '{"hello":"Hallo"}',
+      'en.json': '{"hello":"Hello"}',
     },
   }),
 };

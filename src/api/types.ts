@@ -58,7 +58,7 @@ export interface TranslationPayload {
 }
 
 export interface ExportResponse {
-  files: Record<string, Record<string, string>>;
+  files: Record<string, string>;
 }
 
 export type ExportFormat = 'json';
