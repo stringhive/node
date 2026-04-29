@@ -29,6 +29,7 @@ program
   .option('--source-locale <locale>', 'Source locale code')
   .option('--lang-path <path>', 'Path to language files directory')
   .option('--format <format>', 'File format (json)')
+  .option('--exclude <patterns...>', 'Glob pattern(s) of files to skip (repeatable; merged with config exclude)')
   .option('--quiet', 'Suppress progress output')
   .action(async (hive: string | undefined, options) => {
     await pushCommand(hive, {
@@ -38,6 +39,7 @@ program
       sourceLocale: options.sourceLocale as string | undefined,
       langPath: options.langPath as string | undefined,
       format: options.format as 'json' | undefined,
+      exclude: options.exclude as string[] | undefined,
       quiet: options.quiet as boolean | undefined,
     }).catch(handleError);
   });
@@ -51,6 +53,7 @@ program
   .option('--include-source', 'Include the source locale in the pull')
   .option('--source-locale <locale>', 'Source locale code (excluded from pull by default)')
   .option('--lang-path <path>', 'Path to language files directory')
+  .option('--exclude <patterns...>', 'Glob pattern(s) of files to skip (repeatable; merged with config exclude)')
   .option('--quiet', 'Suppress progress output')
   .action(async (hive: string | undefined, options) => {
     await pullCommand(hive, {
@@ -60,6 +63,7 @@ program
       includeSource: options.includeSource as boolean | undefined,
       sourceLocale: options.sourceLocale as string | undefined,
       langPath: options.langPath as string | undefined,
+      exclude: options.exclude as string[] | undefined,
       quiet: options.quiet as boolean | undefined,
     }).catch(handleError);
   });

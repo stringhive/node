@@ -50,6 +50,10 @@ export default defineConfig({
   langPath: './src/locales',
   sourceLocale: 'en',
   format: 'json',
+  exclude: [
+    // 'en.json',       // skip a specific locale file
+    // '*.json',        // skip all JSON locale files
+  ],
   push: {
     conflictStrategy: 'keep',
   },
@@ -85,6 +89,7 @@ Options:
   --source-locale <locale>       Source locale code (default: "en")
   --lang-path <path>             Use a different directory (default: "./lang")
   --format <format>              File format: json (default: "json")
+  --exclude <patterns...>        Glob pattern(s) of files to skip, merged with config exclude
   --quiet                        Suppress progress output
 ```
 
@@ -102,6 +107,10 @@ stringhive push my-app --sync
 
 # Wipe translations whenever a source string changes
 stringhive push my-app --conflict-strategy clear
+
+# Skip specific files (patterns are matched against the filename)
+stringhive push my-app --exclude en.json
+stringhive push my-app --exclude '*.json'
 ```
 
 The output tells you what happened:
@@ -129,6 +138,7 @@ Options:
   --include-source          Also pull the source locale
   --source-locale <locale>  Source locale code (default: "en")
   --lang-path <path>        Use a different directory (default: "./lang")
+  --exclude <patterns...>   Glob pattern(s) of files to skip, merged with config exclude
   --quiet                   Suppress progress output
 ```
 
@@ -146,6 +156,10 @@ stringhive pull my-app --include-source
 
 # See what would happen before writing anything
 stringhive pull my-app --dry-run
+
+# Skip specific files (patterns are matched against the filename and its basename)
+stringhive pull my-app --exclude fr.json
+stringhive pull my-app --exclude '*.json'
 ```
 
 Output:
