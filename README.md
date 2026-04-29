@@ -1,0 +1,337 @@
+# Stringhive for Node.js
+
+The official Node.js package for [Stringhive](https://stringhive.com). Two CLI commands to sync your translation files, a full API client if you want to go deeper, and zero boilerplate.
+
+[![CI](https://github.com/stringhive/node/actions/workflows/ci.yml/badge.svg)](https://github.com/stringhive/node/actions/workflows/ci.yml)
+[![Latest Version](https://img.shields.io/npm/v/stringhive)](https://www.npmjs.com/package/stringhive)
+[![License](https://img.shields.io/github/license/stringhive/node)](LICENSE)
+
+---
+
+## Requirements
+
+- Node.js 22+
+
+---
+
+## Installation
+
+```bash
+npm install stringhive
+```
+
+Or install globally to use the CLI from anywhere:
+
+```bash
+npm install -g stringhive
+```
+
+---
+
+## Configuration
+
+One line in your `.env` and you're done:
+
+```env
+STRINGHIVE_TOKEN=your-api-token
+```
+
+> `STRINGHIVE_URL` defaults to `https://api.stringhive.com`. Only set it if you're running a custom server.
+
+### Config file
+
+Drop a `stringhive.config.ts` (or `.js`) at your project root for options you'd rather not repeat on every command:
+
+```ts
+import { defineConfig } from 'stringhive';
+
+export default defineConfig({
+  hive: 'my-app',
+  langPath: './src/locales',
+  sourceLocale: 'en',
+  format: 'json_nested',
+  push: {
+    conflictStrategy: 'keep',
+  },
+  pull: {
+    includeSource: false,
+  },
+});
+```
+
+CLI flags always win over the config file. The config file always wins over built-in defaults.
+
+---
+
+## Commands
+
+This is the main event. Two commands that understand flat and nested JSON translation files and just do the right thing.
+
+### Push: local files to Stringhive
+
+```bash
+npx stringhive push <hive>
+```
+
+Reads your source locale from `./lang` and pushes it to Stringhive as source strings. Translations are Stringhive's job — use `--with-translations` if you also want to seed them from local files.
+
+```
+Options:
+  --sync                         Also remove strings from the hive that aren't in your files
+  --conflict-strategy <strategy> What to do with translations when a source string changes: keep (default) or clear
+  --with-translations            Also push translation files for non-source locales
+  --source-locale <locale>       Source locale code (default: "en")
+  --lang-path <path>             Use a different directory (default: "./lang")
+  --format <format>              File format: json or json_nested (default: "json")
+  --quiet                        Suppress progress output
+```
+
+Examples:
+
+```bash
+# Push source strings
+stringhive push my-app
+
+# Push source strings and seed all local translations
+stringhive push my-app --with-translations
+
+# Push and remove stale strings from the hive
+stringhive push my-app --sync
+
+# Wipe translations whenever a source string changes
+stringhive push my-app --conflict-strategy clear
+```
+
+The output tells you what happened:
+
+```
+Pushing 1245 strings to hive 'my-app'...
+✓ Source strings pushed.
+```
+
+### Pull: Stringhive to local files
+
+```bash
+npx stringhive pull <hive>
+```
+
+Exports translated locales from Stringhive and writes them to your `./lang` directory. The source locale is skipped by default — you own that locally.
+
+```
+Options:
+  --locale <locales...>     Pull specific locales only (omit to pull all)
+  --format <format>         File format: json or json_nested (default: "json")
+  --dry-run                 Preview what would be written without touching anything
+  --include-source          Also pull the source locale
+  --source-locale <locale>  Source locale code (default: "en")
+  --lang-path <path>        Use a different directory (default: "./lang")
+  --quiet                   Suppress progress output
+```
+
+Examples:
+
+```bash
+# Pull all translated locales (source excluded)
+stringhive pull my-app
+
+# Pull just French and German
+stringhive pull my-app --locale fr de
+
+# Pull as nested JSON files
+stringhive pull my-app --format json_nested
+
+# Pull everything, including the source locale
+stringhive pull my-app --include-source
+
+# See what would happen before writing anything
+stringhive pull my-app --dry-run
+```
+
+Output:
+
+```
+Pulling 3 locale(s) from hive 'my-app'...
+  ✓ fr: 1245 keys → ./lang/fr.json
+  ✓ de: 1240 keys → ./lang/de.json
+  ✓ es: 1198 keys → ./lang/es.json
+✓ Done. 3683 total keys written across 3 locale(s).
+```
+
+### Other commands
+
+```bash
+# List all hives your token can see
+stringhive hives
+
+# List available locales for a hive
+stringhive locales <hive>
+```
+
+---
+
+## File Formats
+
+| Format | Description |
+|---|---|
+| `json` | Flat `{ "key": "value" }` — one file per locale |
+| `json_nested` | Nested objects, read and written as dot-notation keys internally |
+
+`json_nested` example — a file like this on disk:
+
+```json
+{
+  "auth": {
+    "login": "Login",
+    "logout": "Logout"
+  }
+}
+```
+
+...is treated internally as `{ "auth.login": "Login", "auth.logout": "Logout" }` and round-trips cleanly.
+
+---
+
+## Programmatic Usage
+
+All the same power, available from TypeScript or JavaScript. Good for deploy scripts, build tooling, or anything where you need more control.
+
+```ts
+import { StringhiveClient } from 'stringhive';
+
+const client = new StringhiveClient(); // reads STRINGHIVE_TOKEN from env
+
+// or pass config directly
+const client = new StringhiveClient({
+  token: 'your-api-token',
+  baseUrl: 'https://api.stringhive.com',
+});
+```
+
+### push / pull equivalent
+
+```ts
+// Export all translated locales for a hive
+const fr = await client.export('my-app', 'fr', 'json');
+// { 'auth.login': 'Connexion', 'auth.logout': 'Déconnexion', ... }
+
+// Push source strings
+await client.importStrings('my-app', {
+  strings: [
+    { key: 'auth.login', value: 'Login' },
+    { key: 'auth.logout', value: 'Logout' },
+  ],
+});
+
+// Sync (removes strings absent from the payload)
+await client.syncStrings('my-app', {
+  strings: [...],
+  conflict_strategy: 'keep',
+});
+
+// Push translations for a locale
+await client.importTranslations('my-app', {
+  locale: 'fr',
+  strings: [{ key: 'auth.login', value: 'Connexion' }],
+});
+```
+
+---
+
+## API Reference
+
+### Locales
+
+All locales available on the platform:
+
+```ts
+const locales = await client.locales();
+// [{ code: 'en', name: 'English' }, ...]
+```
+
+### Hives
+
+List all hives your token can see:
+
+```ts
+const hives = await client.hives();
+// [{ slug: 'my-app', name: 'My App', locale: 'en' }, ...]
+```
+
+Stats for one hive:
+
+```ts
+const hive = await client.hive('my-app');
+// { slug: 'my-app', name: 'My App', locale: 'en', string_count: 1245, translation_count: 3683 }
+```
+
+### Source Strings
+
+Fetch with pagination:
+
+```ts
+const page = await client.strings('my-app', 2);
+// { data: [...], meta: { current_page: 2, last_page: 13, per_page: 100, total: 1245 } }
+```
+
+Or grab everything at once:
+
+```ts
+const all = await client.allStrings('my-app'); // loops pages automatically
+```
+
+### Import & Sync
+
+```ts
+// Import — add or update strings, leave the rest alone
+await client.importStrings('my-app', { strings });
+
+// Sync — like import, but also removes strings not in the payload
+await client.syncStrings('my-app', { strings, conflict_strategy: 'clear' });
+
+// Import translations for a locale
+await client.importTranslations('my-app', { locale: 'fr', strings });
+```
+
+### Export
+
+```ts
+const translations = await client.export('my-app', 'fr', 'json');
+// { 'auth.login': 'Connexion', ... }
+```
+
+---
+
+## Exceptions
+
+Every error maps to a typed exception you can catch:
+
+```ts
+import {
+  AuthenticationException, // 401 — bad or expired token
+  ForbiddenException,      // 403 — no permission on this hive
+  HiveNotFoundException,   // 404 — that slug doesn't exist
+  StringLimitException,    // 422 — hit your plan's string quota
+  ValidationException,     // 422 — bad payload
+  NetworkException,        // fetch failed entirely
+} from 'stringhive';
+
+try {
+  await client.importStrings('my-app', { strings });
+} catch (err) {
+  if (err instanceof StringLimitException) {
+    // time to upgrade
+  } else if (err instanceof ValidationException) {
+    console.error(err.errors); // { field: ['error message'] }
+  } else if (err instanceof HiveNotFoundException) {
+    // slug typo?
+  }
+}
+```
+
+The CLI maps these to human-readable messages automatically. Set `STRINGHIVE_DEBUG=1` to get full stack traces.
+
+---
+
+## License
+
+MIT. See [LICENSE](LICENSE).
