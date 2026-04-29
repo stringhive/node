@@ -27,7 +27,7 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
   const exclude = [...(fileConfig.exclude ?? []), ...(cliOptions.exclude ?? [])];
   const include = [...(fileConfig.include ?? []), ...(cliOptions.include ?? [])];
 
-  const options: Required<Omit<PushOptions, 'exclude'>> = {
+  const options: Required<Omit<PushOptions, 'exclude' | 'include'>> = {
     sync: cliOptions.sync ?? false,
     conflictStrategy: cliOptions.conflictStrategy ?? fileConfig.push?.conflictStrategy ?? 'keep',
     withTranslations: cliOptions.withTranslations ?? fileConfig.push?.withTranslations ?? false,
