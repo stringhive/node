@@ -1,6 +1,7 @@
 import { StringhiveClient } from '../api/client.js';
 import { getFormatHandler, discoverLocales, resolveLocalePath } from '../formats/index.js';
 import { loadStringhiveConfig } from '../config/loader.js';
+import { isExcluded } from '../utils/exclude.js';
 import type { FormatName } from '../formats/types.js';
 
 export interface PushOptions {
@@ -10,6 +11,7 @@ export interface PushOptions {
   sourceLocale?: string;
   langPath?: string;
   format?: FormatName;
+  exclude?: string[];
   quiet?: boolean;
 }
 
@@ -21,7 +23,9 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
     throw new Error('No hive specified. Pass it as an argument or set "hive" in stringhive.config.ts.');
   }
 
-  const options: Required<PushOptions> = {
+  const exclude = [...(fileConfig.exclude ?? []), ...(cliOptions.exclude ?? [])];
+
+  const options: Required<Omit<PushOptions, 'exclude'>> = {
     sync: cliOptions.sync ?? false,
     conflictStrategy: cliOptions.conflictStrategy ?? fileConfig.push?.conflictStrategy ?? 'keep',
     withTranslations: cliOptions.withTranslations ?? fileConfig.push?.withTranslations ?? false,
@@ -39,6 +43,13 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
   const handler = getFormatHandler(options.format);
   const log = options.quiet ? () => {} : (msg: string) => process.stdout.write(msg + '\n');
 
+  const filename = `${options.sourceLocale}.json`;
+
+  if (isExcluded(filename, exclude)) {
+    log(`Source file '${filename}' is excluded — nothing to push.`);
+    return;
+  }
+
   const sourcePath = resolveLocalePath(options.langPath, options.sourceLocale, options.format);
   const sourceStrings = await handler.read(sourcePath);
   const entries = Object.entries(sourceStrings);
@@ -49,7 +60,6 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
     );
   }
 
-  const filename = `${options.sourceLocale}.json`;
   const files = { [filename]: sourceStrings };
 
   if (options.sync) {
@@ -67,6 +77,7 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
     const translationLocales = allLocales.filter((l) => l !== options.sourceLocale);
 
     for (const locale of translationLocales) {
+      if (isExcluded(`${locale}.json`, exclude)) continue;
       const localePath = resolveLocalePath(options.langPath, locale, options.format);
       const translations = await handler.read(localePath);
       const translationEntries = Object.entries(translations);
