@@ -9,6 +9,10 @@
     "translations",
     "cli"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stringhive/node.git"
+  },
   "license": "MIT",
   "type": "module",
   "engines": {
