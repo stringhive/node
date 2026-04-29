@@ -36,7 +36,7 @@ One line in your `.env` and you're done:
 STRINGHIVE_TOKEN=your-api-token
 ```
 
-> `STRINGHIVE_URL` defaults to `https://www.stringhive.com`. Only set it if you're running a custom server.
+> `STRINGHIVE_URL` defaults to `https://www.stringhive.com/api`. Only set it if you're running a custom server.
 
 ### Config file
 
@@ -207,7 +207,7 @@ const client = new StringhiveClient(); // reads STRINGHIVE_TOKEN from env
 // or pass config directly
 const client = new StringhiveClient({
   token: 'your-api-token',
-  baseUrl: 'https://www.stringhive.com',
+  baseUrl: 'https://www.stringhive.com/api',
 });
 ```
 

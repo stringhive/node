@@ -24,7 +24,7 @@ export interface StringhiveClientConfig {
   baseUrl?: string;
 }
 
-const DEFAULT_BASE_URL = 'https://www.stringhive.com';
+const DEFAULT_BASE_URL = 'https://www.stringhive.com/api';
 
 export class StringhiveClient {
   private readonly token: string;
@@ -101,24 +101,24 @@ export class StringhiveClient {
   }
 
   async locales(): Promise<Locale[]> {
-    const response = await this.request<{ data: Locale[] }>('GET', '/v1/locales');
+    const response = await this.request<{ data: Locale[] }>('GET', '/locales');
     return response.data;
   }
 
   async hives(): Promise<Hive[]> {
-    const response = await this.request<{ data: Hive[] }>('GET', '/v1/hives');
+    const response = await this.request<{ data: Hive[] }>('GET', '/hives');
     return response.data;
   }
 
   async hive(slug: string): Promise<HiveStats> {
-    const response = await this.request<{ data: HiveStats }>('GET', `/v1/hives/${slug}`);
+    const response = await this.request<{ data: HiveStats }>('GET', `/hives/${slug}`);
     return response.data;
   }
 
   async strings(slug: string, page = 1): Promise<PaginatedResponse<SourceString>> {
     return this.request<PaginatedResponse<SourceString>>(
       'GET',
-      `/v1/hives/${slug}/strings?page=${page}`,
+      `/hives/${slug}/strings?page=${page}`,
     );
   }
 
@@ -135,15 +135,15 @@ export class StringhiveClient {
   }
 
   async importStrings(slug: string, payload: ImportPayload): Promise<void> {
-    await this.request<void>('POST', `/v1/hives/${slug}/strings/import`, payload);
+    await this.request<void>('POST', `/hives/${slug}/strings/import`, payload);
   }
 
   async syncStrings(slug: string, payload: SyncPayload): Promise<void> {
-    await this.request<void>('POST', `/v1/hives/${slug}/strings/sync`, payload);
+    await this.request<void>('POST', `/hives/${slug}/strings/sync`, payload);
   }
 
   async importTranslations(slug: string, payload: TranslationPayload): Promise<void> {
-    await this.request<void>('POST', `/v1/hives/${slug}/translations/import`, payload);
+    await this.request<void>('POST', `/hives/${slug}/translations/import`, payload);
   }
 
   async export(
@@ -153,7 +153,7 @@ export class StringhiveClient {
   ): Promise<Record<string, string>> {
     return this.request<Record<string, string>>(
       'GET',
-      `/v1/hives/${slug}/export?locale=${locale}&format=${format}`,
+      `/hives/${slug}/export?locale=${locale}&format=${format}`,
     );
   }
 }

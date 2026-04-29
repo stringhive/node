@@ -24,11 +24,11 @@ program
   .command('push [hive]')
   .description('Push source strings to Stringhive')
   .option('--sync', 'Use sync mode (update existing strings, apply conflict strategy)')
-  .option('--conflict-strategy <strategy>', 'How to handle changed source strings: keep or clear', 'keep')
+  .option('--conflict-strategy <strategy>', 'How to handle changed source strings: keep or clear')
   .option('--with-translations', 'Also push local translated files')
-  .option('--source-locale <locale>', 'Source locale code', 'en')
-  .option('--lang-path <path>', 'Path to language files directory', './lang')
-  .option('--format <format>', 'File format: json or json_nested', 'json')
+  .option('--source-locale <locale>', 'Source locale code')
+  .option('--lang-path <path>', 'Path to language files directory')
+  .option('--format <format>', 'File format: json or json_nested')
   .option('--quiet', 'Suppress progress output')
   .action(async (hive: string | undefined, options) => {
     await pushCommand(hive, {
@@ -46,11 +46,11 @@ program
   .command('pull [hive]')
   .description('Pull translations from Stringhive')
   .option('--locale <locales...>', 'Specific locales to pull (default: all available)')
-  .option('--format <format>', 'File format: json or json_nested', 'json')
+  .option('--format <format>', 'File format: json or json_nested')
   .option('--dry-run', 'Preview what would be written without writing files')
   .option('--include-source', 'Include the source locale in the pull')
-  .option('--source-locale <locale>', 'Source locale code (excluded from pull by default)', 'en')
-  .option('--lang-path <path>', 'Path to language files directory', './lang')
+  .option('--source-locale <locale>', 'Source locale code (excluded from pull by default)')
+  .option('--lang-path <path>', 'Path to language files directory')
   .option('--quiet', 'Suppress progress output')
   .action(async (hive: string | undefined, options) => {
     await pullCommand(hive, {
