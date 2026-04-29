@@ -1,7 +1,7 @@
 import { StringhiveClient } from '../api/client.js';
 import { getFormatHandler, discoverLocales, resolveLocalePath } from '../formats/index.js';
 import { loadStringhiveConfig } from '../config/loader.js';
-import { isExcluded } from '../utils/exclude.js';
+import { isExcluded, isIncluded } from '../utils/exclude.js';
 import type { FormatName } from '../formats/types.js';
 
 export interface PushOptions {
@@ -12,6 +12,7 @@ export interface PushOptions {
   langPath?: string;
   format?: FormatName;
   exclude?: string[];
+  include?: string[];
   quiet?: boolean;
 }
 
@@ -24,8 +25,9 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
   }
 
   const exclude = [...(fileConfig.exclude ?? []), ...(cliOptions.exclude ?? [])];
+  const include = [...(fileConfig.include ?? []), ...(cliOptions.include ?? [])];
 
-  const options: Required<Omit<PushOptions, 'exclude'>> = {
+  const options: Required<Omit<PushOptions, 'exclude' | 'include'>> = {
     sync: cliOptions.sync ?? false,
     conflictStrategy: cliOptions.conflictStrategy ?? fileConfig.push?.conflictStrategy ?? 'keep',
     withTranslations: cliOptions.withTranslations ?? fileConfig.push?.withTranslations ?? false,
@@ -45,7 +47,7 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
 
   const filename = `${options.sourceLocale}.json`;
 
-  if (isExcluded(filename, exclude)) {
+  if (isExcluded(filename, exclude) || !isIncluded(filename, include)) {
     log(`Source file '${filename}' is excluded — nothing to push.`);
     return;
   }
@@ -77,7 +79,7 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
     const translationLocales = allLocales.filter((l) => l !== options.sourceLocale);
 
     for (const locale of translationLocales) {
-      if (isExcluded(`${locale}.json`, exclude)) continue;
+      if (isExcluded(`${locale}.json`, exclude) || !isIncluded(`${locale}.json`, include)) continue;
       const localePath = resolveLocalePath(options.langPath, locale, options.format);
       const translations = await handler.read(localePath);
       const translationEntries = Object.entries(translations);
