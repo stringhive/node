@@ -149,12 +149,11 @@ export class StringhiveClient {
 
   async export(
     slug: string,
-    locale: string,
     format: ExportFormat,
+    locale?: string,
   ): Promise<ExportResponse> {
-    return this.request<ExportResponse>(
-      'GET',
-      `/hives/${slug}/export?locale=${locale}&format=${format}`,
-    );
+    const params = new URLSearchParams({ format });
+    if (locale) params.append('locale', locale);
+    return this.request<ExportResponse>('GET', `/hives/${slug}/export?${params}`);
   }
 }

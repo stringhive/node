@@ -203,12 +203,23 @@ describe('StringhiveClient', () => {
   });
 
   describe('export()', () => {
-    it('calls export endpoint with locale and format params', async () => {
+    it('calls export endpoint with format param only when no locale given', async () => {
       const response = { files: { 'fr.json': { 'auth.login': 'Se connecter' } } };
       global.fetch = mockFetch(200, response);
       const client = new StringhiveClient();
-      const result = await client.export('my-app', 'fr', 'json');
+      const result = await client.export('my-app', 'json');
       expect(result).toEqual(response);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('format=json'),
+        expect.anything(),
+      );
+    });
+
+    it('includes locale param when specified', async () => {
+      const response = { files: { 'fr.json': { 'auth.login': 'Se connecter' } } };
+      global.fetch = mockFetch(200, response);
+      const client = new StringhiveClient();
+      await client.export('my-app', 'json', 'fr');
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('locale=fr'),
         expect.anything(),

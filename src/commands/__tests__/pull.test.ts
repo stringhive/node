@@ -11,11 +11,13 @@ const formats = await import('../../formats/index.js');
 
 const mockWrite = vi.fn().mockResolvedValue(undefined);
 const mockClient = {
-  locales: vi.fn().mockResolvedValue([
-    { code: 'fr', name: 'French' },
-    { code: 'de', name: 'German' },
-  ]),
-  export: vi.fn().mockResolvedValue({ files: { 'fr.json': { hello: 'Bonjour' } } }),
+  export: vi.fn().mockResolvedValue({
+    files: {
+      'fr.json': { hello: 'Bonjour' },
+      'de.json': { hello: 'Hallo' },
+      'en.json': { hello: 'Hello' },
+    },
+  }),
 };
 
 describe('pullCommand', () => {
@@ -31,41 +33,31 @@ describe('pullCommand', () => {
 
   afterEach(() => vi.clearAllMocks());
 
-  it('fetches all available locales when none specified', async () => {
+  it('calls export once without a locale', async () => {
     await pullCommand('my-app', { quiet: true });
-    expect(mockClient.locales).toHaveBeenCalled();
-    expect(mockClient.export).toHaveBeenCalledTimes(2);
-    expect(mockClient.export).toHaveBeenCalledWith('my-app', 'fr', 'json');
-    expect(mockClient.export).toHaveBeenCalledWith('my-app', 'de', 'json');
+    expect(mockClient.export).toHaveBeenCalledOnce();
+    expect(mockClient.export).toHaveBeenCalledWith('my-app', 'json');
   });
 
   it('excludes source locale by default', async () => {
-    mockClient.locales.mockResolvedValue([
-      { code: 'en', name: 'English' },
-      { code: 'fr', name: 'French' },
-    ]);
     await pullCommand('my-app', { sourceLocale: 'en', quiet: true });
-    expect(mockClient.export).toHaveBeenCalledTimes(1);
-    expect(mockClient.export).toHaveBeenCalledWith('my-app', 'fr', 'json');
+    expect(mockWrite).not.toHaveBeenCalledWith(expect.stringContaining('en.json'), expect.anything());
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('fr.json'), expect.anything());
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('de.json'), expect.anything());
   });
 
   it('includes source locale when --include-source is set', async () => {
-    mockClient.locales.mockResolvedValue([
-      { code: 'en', name: 'English' },
-      { code: 'fr', name: 'French' },
-    ]);
     await pullCommand('my-app', { includeSource: true, sourceLocale: 'en', quiet: true });
-    expect(mockClient.export).toHaveBeenCalledTimes(2);
+    expect(mockWrite).toHaveBeenCalledTimes(3);
   });
 
-  it('only pulls specified locales when --locale is set', async () => {
+  it('filters to requested locales when --locale is set', async () => {
     await pullCommand('my-app', { locale: ['fr'], quiet: true });
-    expect(mockClient.locales).not.toHaveBeenCalled();
-    expect(mockClient.export).toHaveBeenCalledTimes(1);
-    expect(mockClient.export).toHaveBeenCalledWith('my-app', 'fr', 'json');
+    expect(mockWrite).toHaveBeenCalledTimes(1);
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('fr.json'), { hello: 'Bonjour' });
   });
 
-  it('writes each locale file to langPath + filename from response', async () => {
+  it('writes files to langPath + filename from response', async () => {
     await pullCommand('my-app', { locale: ['fr'], langPath: '/lang', quiet: true });
     expect(mockWrite).toHaveBeenCalledWith('/lang/fr.json', { hello: 'Bonjour' });
   });
@@ -73,7 +65,6 @@ describe('pullCommand', () => {
   it('does not write files during --dry-run', async () => {
     await pullCommand('my-app', { dryRun: true, quiet: true });
     expect(mockWrite).not.toHaveBeenCalled();
-    expect(mockClient.export).not.toHaveBeenCalled();
   });
 
   it('logs nothing when --quiet', async () => {

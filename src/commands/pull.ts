@@ -47,40 +47,50 @@ export async function pullCommand(hive: string | undefined, cliOptions: PullOpti
   const handler = getFormatHandler(options.format);
   const log = options.quiet ? () => {} : (msg: string) => process.stdout.write(msg + '\n');
 
-  let targetLocales: string[];
-  if (options.locale && options.locale.length > 0) {
-    targetLocales = options.locale;
-  } else {
-    const allLocales = (await client.locales()).map((l) => l.code);
-    targetLocales = options.includeSource
-      ? allLocales
-      : allLocales.filter((l) => l !== options.sourceLocale);
+  const result = await client.export(resolvedHive, options.format);
+  let files = result.files;
+
+  if (!options.includeSource) {
+    files = Object.fromEntries(
+      Object.entries(files).filter(([filename]) =>
+        !filename.startsWith(`${options.sourceLocale}.`) &&
+        !filename.startsWith(`${options.sourceLocale}/`),
+      ),
+    );
   }
 
-  if (targetLocales.length === 0) {
-    log('No locales to pull.');
+  if (options.locale && options.locale.length > 0) {
+    files = Object.fromEntries(
+      Object.entries(files).filter(([filename]) =>
+        options.locale!.some(
+          (locale) => filename.startsWith(`${locale}.`) || filename.startsWith(`${locale}/`),
+        ),
+      ),
+    );
+  }
+
+  const fileEntries = Object.entries(files);
+
+  if (fileEntries.length === 0) {
+    log('No files to pull.');
     return;
   }
 
   if (options.dryRun) {
-    log(`Dry run — would pull ${targetLocales.length} locale(s): ${targetLocales.join(', ')}`);
+    log(`Dry run — would write ${fileEntries.length} file(s): ${fileEntries.map(([f]) => f).join(', ')}`);
     return;
   }
 
-  log(`Pulling ${targetLocales.length} locale(s) from hive '${resolvedHive}'...`);
+  log(`Pulling from hive '${resolvedHive}'...`);
 
   let totalKeys = 0;
-  for (const locale of targetLocales) {
-    const result = await client.export(resolvedHive, locale, options.format);
-    let count = 0;
-    for (const [filename, content] of Object.entries(result.files)) {
-      const outPath = join(options.langPath, filename);
-      await handler.write(outPath, content);
-      count += Object.keys(content).length;
-    }
+  for (const [filename, content] of fileEntries) {
+    const outPath = join(options.langPath, filename);
+    await handler.write(outPath, content);
+    const count = Object.keys(content).length;
     totalKeys += count;
-    log(`  ✓ ${locale}: ${count} keys`);
+    log(`  ✓ ${filename}: ${count} keys → ${outPath}`);
   }
 
-  log(`✓ Done. ${totalKeys} total keys written across ${targetLocales.length} locale(s).`);
+  log(`✓ Done. ${totalKeys} total keys written across ${fileEntries.length} file(s).`);
 }
