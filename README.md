@@ -59,7 +59,7 @@ export default defineConfig({
 });
 ```
 
-CLI flags always win over the config file. The config file always wins over built-in defaults.
+CLI flags always win over the config file. The config file always wins over built-in defaults. Setting `hive` in the config file means you can run `stringhive push` and `stringhive pull` without repeating it on every command.
 
 ---
 
@@ -70,8 +70,10 @@ This is the main event. Two commands that understand flat and nested JSON transl
 ### Push: local files to Stringhive
 
 ```bash
-npx stringhive push <hive>
+npx stringhive push [hive]
 ```
+
+The `hive` argument is optional if `hive` is set in your config file.
 
 Reads your source locale from `./lang` and pushes it to Stringhive as source strings. Translations are Stringhive's job — use `--with-translations` if you also want to seed them from local files.
 
@@ -112,8 +114,10 @@ Pushing 1245 strings to hive 'my-app'...
 ### Pull: Stringhive to local files
 
 ```bash
-npx stringhive pull <hive>
+npx stringhive pull [hive]
 ```
+
+The `hive` argument is optional if `hive` is set in your config file.
 
 Exports translated locales from Stringhive and writes them to your `./lang` directory. The source locale is skipped by default — you own that locally.
 

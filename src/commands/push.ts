@@ -13,8 +13,13 @@ export interface PushOptions {
   quiet?: boolean;
 }
 
-export async function pushCommand(hive: string, cliOptions: PushOptions): Promise<void> {
+export async function pushCommand(hive: string | undefined, cliOptions: PushOptions): Promise<void> {
   const fileConfig = await loadStringhiveConfig();
+
+  const resolvedHive = hive ?? fileConfig.hive;
+  if (!resolvedHive) {
+    throw new Error('No hive specified. Pass it as an argument or set "hive" in stringhive.config.ts.');
+  }
 
   const options: Required<PushOptions> = {
     sync: cliOptions.sync ?? false,
@@ -47,14 +52,14 @@ export async function pushCommand(hive: string, cliOptions: PushOptions): Promis
   const stringPayload = entries.map(([key, value]) => ({ key, value }));
 
   if (options.sync) {
-    log(`Syncing ${entries.length} strings to hive '${hive}' (conflict strategy: ${options.conflictStrategy})...`);
-    await client.syncStrings(hive, {
+    log(`Syncing ${entries.length} strings to hive '${resolvedHive}' (conflict strategy: ${options.conflictStrategy})...`);
+    await client.syncStrings(resolvedHive, {
       strings: stringPayload,
       conflict_strategy: options.conflictStrategy,
     });
   } else {
-    log(`Pushing ${entries.length} strings to hive '${hive}'...`);
-    await client.importStrings(hive, { strings: stringPayload });
+    log(`Pushing ${entries.length} strings to hive '${resolvedHive}'...`);
+    await client.importStrings(resolvedHive, { strings: stringPayload });
   }
 
   log(`✓ Source strings pushed.`);
@@ -70,7 +75,7 @@ export async function pushCommand(hive: string, cliOptions: PushOptions): Promis
       if (translationEntries.length === 0) continue;
 
       log(`  Pushing ${translationEntries.length} translations for locale '${locale}'...`);
-      await client.importTranslations(hive, {
+      await client.importTranslations(resolvedHive, {
         locale,
         strings: translationEntries.map(([key, value]) => ({ key, value })),
       });

@@ -21,7 +21,7 @@ program
   .version(__STRINGHIVE_VERSION__);
 
 program
-  .command('push <hive>')
+  .command('push [hive]')
   .description('Push source strings to Stringhive')
   .option('--sync', 'Use sync mode (update existing strings, apply conflict strategy)')
   .option('--conflict-strategy <strategy>', 'How to handle changed source strings: keep or clear', 'keep')
@@ -30,7 +30,7 @@ program
   .option('--lang-path <path>', 'Path to language files directory', './lang')
   .option('--format <format>', 'File format: json or json_nested', 'json')
   .option('--quiet', 'Suppress progress output')
-  .action(async (hive: string, options) => {
+  .action(async (hive: string | undefined, options) => {
     await pushCommand(hive, {
       sync: options.sync as boolean | undefined,
       conflictStrategy: options.conflictStrategy as 'keep' | 'clear' | undefined,
@@ -43,7 +43,7 @@ program
   });
 
 program
-  .command('pull <hive>')
+  .command('pull [hive]')
   .description('Pull translations from Stringhive')
   .option('--locale <locales...>', 'Specific locales to pull (default: all available)')
   .option('--format <format>', 'File format: json or json_nested', 'json')
@@ -52,7 +52,7 @@ program
   .option('--source-locale <locale>', 'Source locale code (excluded from pull by default)', 'en')
   .option('--lang-path <path>', 'Path to language files directory', './lang')
   .option('--quiet', 'Suppress progress output')
-  .action(async (hive: string, options) => {
+  .action(async (hive: string | undefined, options) => {
     await pullCommand(hive, {
       locale: options.locale as string[] | undefined,
       format: options.format as 'json' | 'json_nested' | undefined,

@@ -13,8 +13,13 @@ export interface PullOptions {
   quiet?: boolean;
 }
 
-export async function pullCommand(hive: string, cliOptions: PullOptions): Promise<void> {
+export async function pullCommand(hive: string | undefined, cliOptions: PullOptions): Promise<void> {
   const fileConfig = await loadStringhiveConfig();
+
+  const resolvedHive = hive ?? fileConfig.hive;
+  if (!resolvedHive) {
+    throw new Error('No hive specified. Pass it as an argument or set "hive" in stringhive.config.ts.');
+  }
 
   const configLocales = fileConfig.pull?.locale;
   const configLocaleList = configLocales
@@ -61,11 +66,11 @@ export async function pullCommand(hive: string, cliOptions: PullOptions): Promis
     return;
   }
 
-  log(`Pulling ${targetLocales.length} locale(s) from hive '${hive}'...`);
+  log(`Pulling ${targetLocales.length} locale(s) from hive '${resolvedHive}'...`);
 
   let totalKeys = 0;
   for (const locale of targetLocales) {
-    const strings = await client.export(hive, locale, options.format);
+    const strings = await client.export(resolvedHive, locale, options.format);
     const count = Object.keys(strings).length;
     totalKeys += count;
 
