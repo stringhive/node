@@ -61,4 +61,4 @@ export interface ExportResponse {
   files: Record<string, Record<string, string>>;
 }
 
-export type ExportFormat = 'json' | 'json_nested';
+export type ExportFormat = 'json';

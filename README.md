@@ -49,7 +49,7 @@ export default defineConfig({
   hive: 'my-app',
   langPath: './src/locales',
   sourceLocale: 'en',
-  format: 'json_nested',
+  format: 'json',
   push: {
     conflictStrategy: 'keep',
   },
@@ -84,7 +84,7 @@ Options:
   --with-translations            Also push translation files for non-source locales
   --source-locale <locale>       Source locale code (default: "en")
   --lang-path <path>             Use a different directory (default: "./lang")
-  --format <format>              File format: json or json_nested (default: "json")
+  --format <format>              File format: json (default: "json")
   --quiet                        Suppress progress output
 ```
 
@@ -124,7 +124,7 @@ Exports translated locales from Stringhive and writes them to your `./lang` dire
 ```
 Options:
   --locale <locales...>     Pull specific locales only (omit to pull all)
-  --format <format>         File format: json or json_nested (default: "json")
+  --format <format>         File format: json (default: "json")
   --dry-run                 Preview what would be written without touching anything
   --include-source          Also pull the source locale
   --source-locale <locale>  Source locale code (default: "en")
@@ -140,9 +140,6 @@ stringhive pull my-app
 
 # Pull just French and German
 stringhive pull my-app --locale fr de
-
-# Pull as nested JSON files
-stringhive pull my-app --format json_nested
 
 # Pull everything, including the source locale
 stringhive pull my-app --include-source
@@ -170,28 +167,6 @@ stringhive hives
 # List available locales for a hive
 stringhive locales <hive>
 ```
-
----
-
-## File Formats
-
-| Format | Description |
-|---|---|
-| `json` | Flat `{ "key": "value" }` — one file per locale |
-| `json_nested` | Nested objects, read and written as dot-notation keys internally |
-
-`json_nested` example — a file like this on disk:
-
-```json
-{
-  "auth": {
-    "login": "Login",
-    "logout": "Logout"
-  }
-}
-```
-
-...is treated internally as `{ "auth.login": "Login", "auth.logout": "Logout" }` and round-trips cleanly.
 
 ---
 

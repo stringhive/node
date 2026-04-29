@@ -1,4 +1,4 @@
-export type FormatName = 'json' | 'json_nested';
+export type FormatName = 'json';
 
 export interface FormatHandler {
   read(filePath: string): Promise<Record<string, string>>;

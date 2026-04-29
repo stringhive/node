@@ -28,7 +28,7 @@ program
   .option('--with-translations', 'Also push local translated files')
   .option('--source-locale <locale>', 'Source locale code')
   .option('--lang-path <path>', 'Path to language files directory')
-  .option('--format <format>', 'File format: json or json_nested')
+  .option('--format <format>', 'File format (json)')
   .option('--quiet', 'Suppress progress output')
   .action(async (hive: string | undefined, options) => {
     await pushCommand(hive, {
@@ -37,7 +37,7 @@ program
       withTranslations: options.withTranslations as boolean | undefined,
       sourceLocale: options.sourceLocale as string | undefined,
       langPath: options.langPath as string | undefined,
-      format: options.format as 'json' | 'json_nested' | undefined,
+      format: options.format as 'json' | undefined,
       quiet: options.quiet as boolean | undefined,
     }).catch(handleError);
   });
@@ -46,7 +46,7 @@ program
   .command('pull [hive]')
   .description('Pull translations from Stringhive')
   .option('--locale <locales...>', 'Specific locales to pull (default: all available)')
-  .option('--format <format>', 'File format: json or json_nested')
+  .option('--format <format>', 'File format (json)')
   .option('--dry-run', 'Preview what would be written without writing files')
   .option('--include-source', 'Include the source locale in the pull')
   .option('--source-locale <locale>', 'Source locale code (excluded from pull by default)')
@@ -55,7 +55,7 @@ program
   .action(async (hive: string | undefined, options) => {
     await pullCommand(hive, {
       locale: options.locale as string[] | undefined,
-      format: options.format as 'json' | 'json_nested' | undefined,
+      format: options.format as 'json' | undefined,
       dryRun: options.dryRun as boolean | undefined,
       includeSource: options.includeSource as boolean | undefined,
       sourceLocale: options.sourceLocale as string | undefined,
