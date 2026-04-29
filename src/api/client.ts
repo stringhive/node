@@ -24,7 +24,7 @@ export interface StringhiveClientConfig {
   baseUrl?: string;
 }
 
-const DEFAULT_BASE_URL = 'https://api.stringhive.com';
+const DEFAULT_BASE_URL = 'https://www.stringhive.com';
 
 export class StringhiveClient {
   private readonly token: string;
