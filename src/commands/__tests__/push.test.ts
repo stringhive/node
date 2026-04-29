@@ -33,7 +33,7 @@ describe('pushCommand', () => {
   it('calls importStrings when --sync is not set', async () => {
     await pushCommand('my-app', { quiet: true });
     expect(mockClient.importStrings).toHaveBeenCalledWith('my-app', {
-      strings: [{ key: 'hello', value: 'Hello' }, { key: 'world', value: 'World' }],
+      files: { 'en.json': { hello: 'Hello', world: 'World' } },
     });
     expect(mockClient.syncStrings).not.toHaveBeenCalled();
   });
@@ -41,7 +41,7 @@ describe('pushCommand', () => {
   it('calls syncStrings with conflict_strategy when --sync is set', async () => {
     await pushCommand('my-app', { sync: true, conflictStrategy: 'clear', quiet: true });
     expect(mockClient.syncStrings).toHaveBeenCalledWith('my-app', {
-      strings: expect.any(Array),
+      files: expect.any(Object),
       conflict_strategy: 'clear',
     });
     expect(mockClient.importStrings).not.toHaveBeenCalled();
@@ -64,8 +64,8 @@ describe('pushCommand', () => {
     });
     await pushCommand('my-app', { withTranslations: true, sourceLocale: 'en', quiet: true });
     expect(mockClient.importTranslations).toHaveBeenCalledTimes(2);
-    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', expect.objectContaining({ locale: 'fr' }));
-    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', expect.objectContaining({ locale: 'de' }));
+    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', 'fr', expect.any(Object));
+    expect(mockClient.importTranslations).toHaveBeenCalledWith('my-app', 'de', expect.any(Object));
   });
 
   it('skips translation locales with no strings', async () => {

@@ -72,7 +72,7 @@ program
     const client = new StringhiveClient();
     const hives = await client.hives().catch(handleError);
     for (const hive of hives) {
-      process.stdout.write(`${hive.slug}  ${hive.name}  [${hive.locale}]\n`);
+      process.stdout.write(`${hive.slug}  ${hive.name}  [${hive.source_locale}]\n`);
     }
   });
 

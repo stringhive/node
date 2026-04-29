@@ -15,7 +15,7 @@ const mockClient = {
     { code: 'fr', name: 'French' },
     { code: 'de', name: 'German' },
   ]),
-  export: vi.fn().mockResolvedValue({ hello: 'Bonjour' }),
+  export: vi.fn().mockResolvedValue({ files: { 'fr.json': { hello: 'Bonjour' } } }),
 };
 
 describe('pullCommand', () => {
@@ -26,7 +26,6 @@ describe('pullCommand', () => {
       read: vi.fn(),
       write: mockWrite,
     });
-    vi.mocked(formats.resolveLocalePath).mockImplementation((_base, locale) => `/lang/${locale}.json`);
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
   });
 
@@ -66,8 +65,8 @@ describe('pullCommand', () => {
     expect(mockClient.export).toHaveBeenCalledWith('my-app', 'fr', 'json');
   });
 
-  it('writes each locale file to the resolved path', async () => {
-    await pullCommand('my-app', { locale: ['fr'], quiet: true });
+  it('writes each locale file to langPath + filename from response', async () => {
+    await pullCommand('my-app', { locale: ['fr'], langPath: '/lang', quiet: true });
     expect(mockWrite).toHaveBeenCalledWith('/lang/fr.json', { hello: 'Bonjour' });
   });
 

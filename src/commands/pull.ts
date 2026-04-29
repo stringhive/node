@@ -1,5 +1,6 @@
+import { join } from 'node:path';
 import { StringhiveClient } from '../api/client.js';
-import { getFormatHandler, discoverLocales, resolveLocalePath } from '../formats/index.js';
+import { getFormatHandler } from '../formats/index.js';
 import { loadStringhiveConfig } from '../config/loader.js';
 import type { FormatName } from '../formats/types.js';
 
@@ -70,13 +71,15 @@ export async function pullCommand(hive: string | undefined, cliOptions: PullOpti
 
   let totalKeys = 0;
   for (const locale of targetLocales) {
-    const strings = await client.export(resolvedHive, locale, options.format);
-    const count = Object.keys(strings).length;
+    const result = await client.export(resolvedHive, locale, options.format);
+    let count = 0;
+    for (const [filename, content] of Object.entries(result.files)) {
+      const outPath = join(options.langPath, filename);
+      await handler.write(outPath, content);
+      count += Object.keys(content).length;
+    }
     totalKeys += count;
-
-    const outPath = resolveLocalePath(options.langPath, locale, options.format);
-    await handler.write(outPath, strings);
-    log(`  ✓ ${locale}: ${count} keys → ${outPath}`);
+    log(`  ✓ ${locale}: ${count} keys`);
   }
 
   log(`✓ Done. ${totalKeys} total keys written across ${targetLocales.length} locale(s).`);

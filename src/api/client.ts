@@ -9,13 +9,13 @@ import {
 } from './errors.js';
 import type {
   ExportFormat,
+  ExportResponse,
   Hive,
   HiveStats,
   ImportPayload,
   Locale,
   PaginatedResponse,
   SourceString,
-  SyncPayload,
   TranslationPayload,
 } from './types.js';
 
@@ -79,8 +79,10 @@ export class StringhiveClient {
         throw new AuthenticationException(responseBody);
       case 403:
         throw new ForbiddenException(responseBody);
-      case 404:
-        throw new HiveNotFoundException(path.split('/')[2] ?? path, responseBody);
+      case 404: {
+        const match = path.match(/\/hives\/([^/?]+)/);
+        throw new HiveNotFoundException(match?.[1] ?? path, responseBody);
+      }
       case 422: {
         const body422 = responseBody as Record<string, unknown>;
         if (body422 && typeof body422 === 'object' && 'errors' in body422) {
@@ -101,18 +103,17 @@ export class StringhiveClient {
   }
 
   async locales(): Promise<Locale[]> {
-    const response = await this.request<{ data: Locale[] }>('GET', '/locales');
-    return response.data;
+    const response = await this.request<{ locales: Locale[] }>('GET', '/locales');
+    return response.locales;
   }
 
   async hives(): Promise<Hive[]> {
-    const response = await this.request<{ data: Hive[] }>('GET', '/hives');
-    return response.data;
+    const response = await this.request<{ hives: Hive[] }>('GET', '/hives');
+    return response.hives;
   }
 
   async hive(slug: string): Promise<HiveStats> {
-    const response = await this.request<{ data: HiveStats }>('GET', `/hives/${slug}`);
-    return response.data;
+    return this.request<HiveStats>('GET', `/hives/${slug}`);
   }
 
   async strings(slug: string, page = 1): Promise<PaginatedResponse<SourceString>> {
@@ -135,23 +136,23 @@ export class StringhiveClient {
   }
 
   async importStrings(slug: string, payload: ImportPayload): Promise<void> {
-    await this.request<void>('POST', `/hives/${slug}/strings/import`, payload);
+    await this.request<void>('POST', `/hives/${slug}/strings`, payload);
   }
 
-  async syncStrings(slug: string, payload: SyncPayload): Promise<void> {
-    await this.request<void>('POST', `/hives/${slug}/strings/sync`, payload);
+  async syncStrings(slug: string, payload: ImportPayload): Promise<void> {
+    await this.request<void>('PUT', `/hives/${slug}/strings`, payload);
   }
 
-  async importTranslations(slug: string, payload: TranslationPayload): Promise<void> {
-    await this.request<void>('POST', `/hives/${slug}/translations/import`, payload);
+  async importTranslations(slug: string, locale: string, payload: TranslationPayload): Promise<void> {
+    await this.request<void>('POST', `/hives/${slug}/translations/${locale}`, payload);
   }
 
   async export(
     slug: string,
     locale: string,
     format: ExportFormat,
-  ): Promise<Record<string, string>> {
-    return this.request<Record<string, string>>(
+  ): Promise<ExportResponse> {
+    return this.request<ExportResponse>(
       'GET',
       `/hives/${slug}/export?locale=${locale}&format=${format}`,
     );

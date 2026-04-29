@@ -6,9 +6,10 @@ export type {
   HiveStats,
   SourceString,
   PaginatedResponse,
+  StringFiles,
   ImportPayload,
-  SyncPayload,
   TranslationPayload,
+  ExportResponse,
   ExportFormat,
 } from './api/types.js';
 export {

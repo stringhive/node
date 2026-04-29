@@ -1,17 +1,32 @@
 export interface Locale {
   code: string;
   name: string;
+  region?: string;
+  rtl?: boolean;
+  is_popular?: boolean;
 }
 
 export interface Hive {
   slug: string;
   name: string;
-  locale: string;
+  source_locale: string;
+  locales: string[];
+  string_count: number;
 }
 
-export interface HiveStats extends Hive {
+export interface HiveStats {
+  slug: string;
+  name: string;
+  source_locale: string;
   string_count: number;
-  translation_count: number;
+  locales: Record<string, {
+    translated: number;
+    approved: number;
+    warning: number;
+    empty: number;
+    translated_percent: number;
+    approved_percent: number;
+  }>;
 }
 
 export interface SourceString {
@@ -30,24 +45,20 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface ImportPayload {
-  strings: Array<{
-    key: string;
-    value: string;
-    description?: string;
-  }>;
-}
+export type StringFiles = Record<string, Record<string, string>>;
 
-export interface SyncPayload extends ImportPayload {
-  conflict_strategy: 'keep' | 'clear';
+export interface ImportPayload {
+  conflict_strategy?: 'keep' | 'clear';
+  files: StringFiles;
 }
 
 export interface TranslationPayload {
-  locale: string;
-  strings: Array<{
-    key: string;
-    value: string;
-  }>;
+  overwrite_strategy?: 'skip' | 'overwrite';
+  files: StringFiles;
+}
+
+export interface ExportResponse {
+  files: Record<string, Record<string, string>>;
 }
 
 export type ExportFormat = 'json' | 'json_nested';

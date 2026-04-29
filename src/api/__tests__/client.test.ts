@@ -47,12 +47,12 @@ describe('StringhiveClient', () => {
   });
 
   describe('locales()', () => {
-    it('calls /locales and returns data array', async () => {
-      const data = [{ code: 'en', name: 'English' }];
-      global.fetch = mockFetch(200, { data });
+    it('calls /locales and returns locales array', async () => {
+      const locales = [{ code: 'en', name: 'English' }];
+      global.fetch = mockFetch(200, { locales });
       const client = new StringhiveClient();
       const result = await client.locales();
-      expect(result).toEqual(data);
+      expect(result).toEqual(locales);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/locales'),
         expect.objectContaining({ method: 'GET' }),
@@ -61,19 +61,23 @@ describe('StringhiveClient', () => {
   });
 
   describe('hives()', () => {
-    it('returns data array', async () => {
-      const data = [{ slug: 'my-app', name: 'My App', locale: 'en' }];
-      global.fetch = mockFetch(200, { data });
+    it('calls /hives and returns hives array', async () => {
+      const hives = [{ slug: 'my-app', name: 'My App', source_locale: 'en', locales: ['fr'], string_count: 10 }];
+      global.fetch = mockFetch(200, { hives });
       const client = new StringhiveClient();
       const result = await client.hives();
-      expect(result).toEqual(data);
+      expect(result).toEqual(hives);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/hives'),
+        expect.objectContaining({ method: 'GET' }),
+      );
     });
   });
 
   describe('hive()', () => {
-    it('calls /hives/:slug', async () => {
-      const data = { slug: 'my-app', name: 'My App', locale: 'en', string_count: 10, translation_count: 5 };
-      global.fetch = mockFetch(200, { data });
+    it('calls /hives/:slug and returns response directly', async () => {
+      const data = { slug: 'my-app', name: 'My App', source_locale: 'en', string_count: 10, locales: {} };
+      global.fetch = mockFetch(200, data);
       const client = new StringhiveClient();
       const result = await client.hive('my-app');
       expect(result).toEqual(data);
@@ -140,7 +144,7 @@ describe('StringhiveClient', () => {
       const body = { errors: { key: ['The key field is required.'] } };
       global.fetch = mockFetch(422, body, false);
       const client = new StringhiveClient();
-      await expect(client.importStrings('my-app', { strings: [] })).rejects.toBeInstanceOf(
+      await expect(client.importStrings('my-app', { files: { 'en.json': {} } })).rejects.toBeInstanceOf(
         ValidationException,
       );
     });
@@ -149,7 +153,7 @@ describe('StringhiveClient', () => {
       const body = { message: 'String limit exceeded.' };
       global.fetch = mockFetch(422, body, false);
       const client = new StringhiveClient();
-      await expect(client.importStrings('my-app', { strings: [] })).rejects.toBeInstanceOf(
+      await expect(client.importStrings('my-app', { files: { 'en.json': {} } })).rejects.toBeInstanceOf(
         StringLimitException,
       );
     });
@@ -162,25 +166,37 @@ describe('StringhiveClient', () => {
   });
 
   describe('importStrings()', () => {
-    it('sends POST with strings payload', async () => {
+    it('sends POST to /hives/:slug/strings with files payload', async () => {
       global.fetch = mockFetch(204, undefined);
       const client = new StringhiveClient();
-      const payload = { strings: [{ key: 'hello', value: 'Hello' }] };
+      const payload = { files: { 'en.json': { hello: 'Hello' } } };
       await client.importStrings('my-app', payload);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/hives/my-app/strings/import'),
+        expect.stringContaining('/hives/my-app/strings'),
         expect.objectContaining({ method: 'POST' }),
       );
     });
   });
 
   describe('syncStrings()', () => {
-    it('sends POST to sync endpoint with conflict_strategy', async () => {
+    it('sends PUT to /hives/:slug/strings with conflict_strategy', async () => {
       global.fetch = mockFetch(204, undefined);
       const client = new StringhiveClient();
-      await client.syncStrings('my-app', { strings: [], conflict_strategy: 'clear' });
+      await client.syncStrings('my-app', { files: { 'en.json': {} }, conflict_strategy: 'clear' });
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/hives/my-app/strings/sync'),
+        expect.stringContaining('/hives/my-app/strings'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  describe('importTranslations()', () => {
+    it('sends POST to /hives/:slug/translations/:locale', async () => {
+      global.fetch = mockFetch(204, undefined);
+      const client = new StringhiveClient();
+      await client.importTranslations('my-app', 'fr', { files: { 'fr.json': { hello: 'Bonjour' } } });
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/hives/my-app/translations/fr'),
         expect.objectContaining({ method: 'POST' }),
       );
     });
@@ -188,11 +204,11 @@ describe('StringhiveClient', () => {
 
   describe('export()', () => {
     it('calls export endpoint with locale and format params', async () => {
-      const translations = { 'auth.login': 'Se connecter' };
-      global.fetch = mockFetch(200, translations);
+      const response = { files: { 'fr.json': { 'auth.login': 'Se connecter' } } };
+      global.fetch = mockFetch(200, response);
       const client = new StringhiveClient();
       const result = await client.export('my-app', 'fr', 'json');
-      expect(result).toEqual(translations);
+      expect(result).toEqual(response);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('locale=fr'),
         expect.anything(),

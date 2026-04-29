@@ -49,17 +49,15 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
     );
   }
 
-  const stringPayload = entries.map(([key, value]) => ({ key, value }));
+  const filename = `${options.sourceLocale}.json`;
+  const files = { [filename]: sourceStrings };
 
   if (options.sync) {
     log(`Syncing ${entries.length} strings to hive '${resolvedHive}' (conflict strategy: ${options.conflictStrategy})...`);
-    await client.syncStrings(resolvedHive, {
-      strings: stringPayload,
-      conflict_strategy: options.conflictStrategy,
-    });
+    await client.syncStrings(resolvedHive, { files, conflict_strategy: options.conflictStrategy });
   } else {
     log(`Pushing ${entries.length} strings to hive '${resolvedHive}'...`);
-    await client.importStrings(resolvedHive, { strings: stringPayload });
+    await client.importStrings(resolvedHive, { files });
   }
 
   log(`✓ Source strings pushed.`);
@@ -75,9 +73,8 @@ export async function pushCommand(hive: string | undefined, cliOptions: PushOpti
       if (translationEntries.length === 0) continue;
 
       log(`  Pushing ${translationEntries.length} translations for locale '${locale}'...`);
-      await client.importTranslations(resolvedHive, {
-        locale,
-        strings: translationEntries.map(([key, value]) => ({ key, value })),
+      await client.importTranslations(resolvedHive, locale, {
+        files: { [`${locale}.json`]: translations },
       });
     }
 
