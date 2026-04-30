@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { pushCommand } from '../src/commands/push.js';
 import { pullCommand } from '../src/commands/pull.js';
+import { auditCommand } from '../src/commands/audit.js';
 import {
   StringhiveError,
   AuthenticationException,
@@ -69,6 +70,26 @@ program
       exclude: options.exclude as string[] | undefined,
       include: options.include as string[] | undefined,
       quiet: options.quiet as boolean | undefined,
+    }).catch(handleError);
+  });
+
+program
+  .command('audit [hive]')
+  .description('Audit key parity between the local source file and Stringhive')
+  .option('--format <format>', 'Output format: text or json (default: text)')
+  .option('--fail-on-orphaned', 'Exit 1 if orphaned keys are found (in Stringhive but not local)')
+  .option('--fail-on-missing', 'Exit 1 if unpushed keys are found (local but not in Stringhive)')
+  .option('--source-locale <locale>', 'Source locale code')
+  .option('--lang-path <path>', 'Path to language files directory')
+  .option('--scan-source <glob>', 'Glob pattern for source files to scan for key references (.js/.ts/.vue)')
+  .action(async (hive: string | undefined, options) => {
+    await auditCommand(hive, {
+      format: options.format as 'text' | 'json' | undefined,
+      failOnOrphaned: options.failOnOrphaned as boolean | undefined,
+      failOnMissing: options.failOnMissing as boolean | undefined,
+      sourceLocale: options.sourceLocale as string | undefined,
+      langPath: options.langPath as string | undefined,
+      scanSource: options.scanSource as string | undefined,
     }).catch(handleError);
   });
 
