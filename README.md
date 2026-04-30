@@ -1,6 +1,6 @@
 # Stringhive for Node.js
 
-The official Node.js package for [Stringhive](https://stringhive.com). Two CLI commands to sync your translation files, a full API client if you want to go deeper, and zero boilerplate.
+The official Node.js package for [Stringhive](https://stringhive.com). CLI commands to sync and audit your translation files, a full API client if you want to go deeper, and zero boilerplate.
 
 [![CI](https://github.com/stringhive/node/actions/workflows/ci.yml/badge.svg)](https://github.com/stringhive/node/actions/workflows/ci.yml)
 [![Latest Version](https://img.shields.io/npm/v/stringhive)](https://www.npmjs.com/package/stringhive)
@@ -73,7 +73,7 @@ CLI flags always win over the config file. The config file always wins over buil
 
 ## Commands
 
-This is the main event. Two commands that understand flat and nested JSON translation files and just do the right thing.
+Push, pull, and audit your translation files. All commands read the same config file and accept the same `--lang-path` / `--source-locale` flags.
 
 ### Push: local files to Stringhive
 
@@ -185,6 +185,97 @@ Pulling 3 locale(s) from hive 'my-app'...
   ✓ de: 1240 keys → ./lang/de.json
   ✓ es: 1198 keys → ./lang/es.json
 ✓ Done. 3683 total keys written across 3 locale(s).
+```
+
+### Audit: diff local file against Stringhive
+
+```bash
+npx stringhive audit [hive]
+```
+
+The `hive` argument is optional if `hive` is set in your config file.
+
+Compares the keys in your local source locale file against the keys stored in Stringhive and reports the diff. Nothing is written or changed.
+
+```
+Options:
+  --format <format>         Output format: text (default) or json
+  --fail-on-missing         Exit 1 if any local keys are absent from Stringhive (unpushed)
+  --fail-on-orphaned        Exit 1 if any Stringhive keys are absent locally (orphaned)
+  --source-locale <locale>  Source locale code (default: "en")
+  --lang-path <path>        Use a different directory (default: "./lang")
+  --scan-source <glob>      Also scan source files for key references (see below)
+```
+
+Examples:
+
+```bash
+# Audit key parity
+stringhive audit my-app
+
+# Gate a CI pipeline — fail if keys are out of sync in either direction
+stringhive audit my-app --fail-on-missing --fail-on-orphaned
+
+# Machine-readable output for scripting
+stringhive audit my-app --format json
+```
+
+Text output:
+
+```
+Audit: my-app
+  Local keys:      1245
+  Stringhive keys: 1248
+
+✗ Unpushed (2) — local but not in Stringhive:
+    auth.new_feature
+    settings.beta_opt_in
+
+✗ Orphaned (3) — in Stringhive but not in local file:
+    deprecated.old_key
+    legacy.signup_v1
+    legacy.signup_v2
+```
+
+JSON output (`--format json`):
+
+```json
+{
+  "hive": "my-app",
+  "local_key_count": 1245,
+  "api_key_count": 1248,
+  "unpushed": ["auth.new_feature", "settings.beta_opt_in"],
+  "orphaned": ["deprecated.old_key", "legacy.signup_v1", "legacy.signup_v2"]
+}
+```
+
+#### Static analysis with `--scan-source`
+
+Pass a glob to also extract translation key references from your source code. The command scans for `t('key')`, `$t('key')`, and `i18n.t('key')` calls — covering Vue, React, and plain JS/TS patterns including `useI18n()` destructuring.
+
+```bash
+# Report keys referenced in code but missing from your local JSON (and vice versa)
+stringhive audit my-app --scan-source 'src/**/*.{js,ts,vue}'
+```
+
+This adds two more sections to the report:
+
+- **Undefined** — keys called in source code that don't exist in the local JSON file (runtime translation misses)
+- **Unused** — keys defined in the local JSON file that are never called in source code (dead strings)
+
+```json
+{
+  "hive": "my-app",
+  "local_key_count": 1245,
+  "api_key_count": 1248,
+  "unpushed": [],
+  "orphaned": [],
+  "scan": {
+    "source_key_count": 1239,
+    "undefined": ["checkout.promo_banner"],
+    "unused": ["onboarding.legacy_step3", "onboarding.legacy_step4"]
+  }
+}
 ```
 
 ### Other commands
