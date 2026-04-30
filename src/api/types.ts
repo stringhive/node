@@ -32,6 +32,7 @@ export interface HiveStats {
 export interface SourceString {
   key: string;
   value: string;
+  is_plural: boolean;
   description?: string;
 }
 
