@@ -8,6 +8,9 @@ export interface AuditOptions {
   format?: 'text' | 'json';
   failOnOrphaned?: boolean;
   failOnMissing?: boolean;
+  failOnUnapproved?: boolean;
+  locale?: string;
+  minApproved?: number;
   sourceLocale?: string;
   langPath?: string;
   fileFormat?: FormatName;
@@ -20,6 +23,12 @@ interface ScanReport {
   unused: string[];
 }
 
+interface LocaleApproval {
+  locale: string;
+  approved_percent: number;
+  pass: boolean;
+}
+
 interface AuditReport {
   hive: string;
   local_key_count: number;
@@ -27,6 +36,7 @@ interface AuditReport {
   unpushed: string[];
   orphaned: string[];
   scan?: ScanReport;
+  approval?: LocaleApproval[];
 }
 
 export async function auditCommand(hive: string | undefined, cliOptions: AuditOptions): Promise<void> {
@@ -41,6 +51,9 @@ export async function auditCommand(hive: string | undefined, cliOptions: AuditOp
     format: cliOptions.format ?? 'text',
     failOnOrphaned: cliOptions.failOnOrphaned ?? false,
     failOnMissing: cliOptions.failOnMissing ?? false,
+    failOnUnapproved: cliOptions.failOnUnapproved ?? false,
+    locale: cliOptions.locale,
+    minApproved: cliOptions.minApproved ?? 100,
     sourceLocale: cliOptions.sourceLocale ?? fileConfig.sourceLocale ?? 'en',
     langPath: cliOptions.langPath ?? fileConfig.langPath ?? './lang',
     fileFormat: (cliOptions.fileFormat ?? fileConfig.format ?? 'json') as FormatName,
@@ -86,6 +99,22 @@ export async function auditCommand(hive: string | undefined, cliOptions: AuditOp
     };
   }
 
+  if (options.failOnUnapproved) {
+    const hiveStats = await client.hive(resolvedHive);
+    const requestedLocales = options.locale
+      ? options.locale.split(',').map((c) => c.trim()).filter(Boolean)
+      : null;
+    const localesToCheck = requestedLocales
+      ? Object.entries(hiveStats.locales).filter(([code]) => requestedLocales.includes(code))
+      : Object.entries(hiveStats.locales);
+
+    report.approval = localesToCheck.map(([code, stats]) => ({
+      locale: code,
+      approved_percent: stats.approved_percent,
+      pass: stats.approved_percent >= options.minApproved,
+    }));
+  }
+
   if (options.format === 'json') {
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   } else {
@@ -94,7 +123,8 @@ export async function auditCommand(hive: string | undefined, cliOptions: AuditOp
 
   const shouldFail =
     (options.failOnOrphaned && orphaned.length > 0) ||
-    (options.failOnMissing && unpushed.length > 0);
+    (options.failOnMissing && unpushed.length > 0) ||
+    (options.failOnUnapproved && report.approval?.some((a) => !a.pass) === true);
 
   if (shouldFail) {
     process.exit(1);
@@ -172,6 +202,20 @@ function printTextReport(report: AuditReport): void {
       'No unused keys (all local keys are referenced in source).',
       'defined locally but not referenced in source',
     );
+  }
+
+  if (report.approval) {
+    process.stdout.write('\n');
+    const failed = report.approval.filter((a) => !a.pass);
+    if (failed.length === 0) {
+      process.stdout.write('✓ All locales meet the minimum approved threshold.\n');
+    } else {
+      process.stdout.write(`✗ Unapproved (${failed.length}) — below minimum approved %:\n`);
+      for (const a of report.approval) {
+        const mark = a.pass ? '✓' : '✗';
+        process.stdout.write(`    ${mark} ${a.locale}: ${a.approved_percent}%\n`);
+      }
+    }
   }
 
   process.stdout.write('\n');
