@@ -1,6 +1,6 @@
 {
   "name": "stringhive",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Stringhive CLI and Node.js client for pushing and pulling translation strings",
   "keywords": [
     "stringhive",
