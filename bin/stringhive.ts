@@ -79,6 +79,9 @@ program
   .option('--format <format>', 'Output format: text or json (default: text)')
   .option('--fail-on-orphaned', 'Exit 1 if orphaned keys are found (in Stringhive but not local)')
   .option('--fail-on-missing', 'Exit 1 if unpushed keys are found (local but not in Stringhive)')
+  .option('--fail-on-unapproved', 'Exit 1 if any locale has unapproved translations')
+  .option('--locale <codes>', 'Comma-separated locale codes to scope the --fail-on-unapproved check')
+  .option('--min-approved <pct>', 'Minimum approved % to pass (default: 100). Only applies with --fail-on-unapproved.')
   .option('--source-locale <locale>', 'Source locale code')
   .option('--lang-path <path>', 'Path to language files directory')
   .option('--scan-source <glob>', 'Glob pattern for source files to scan for key references (.js/.ts/.vue)')
@@ -87,6 +90,9 @@ program
       format: options.format as 'text' | 'json' | undefined,
       failOnOrphaned: options.failOnOrphaned as boolean | undefined,
       failOnMissing: options.failOnMissing as boolean | undefined,
+      failOnUnapproved: options.failOnUnapproved as boolean | undefined,
+      locale: options.locale as string | undefined,
+      minApproved: options.minApproved !== undefined ? Number(options.minApproved) : undefined,
       sourceLocale: options.sourceLocale as string | undefined,
       langPath: options.langPath as string | undefined,
       scanSource: options.scanSource as string | undefined,
